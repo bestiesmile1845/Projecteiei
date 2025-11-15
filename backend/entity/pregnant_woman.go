@@ -1,8 +1,6 @@
 package entity
 
-import (
-	"gorm.io/gorm"
-)
+import "gorm.io/gorm"
 
 type PregnantWoman struct {
 	gorm.Model
@@ -12,7 +10,11 @@ type PregnantWoman struct {
 	CitizenID   string
 	PhoneNumber string
 	Email       string
-
+	
+	// **ฟิลด์ที่เพิ่มเข้ามาสำหรับการล็อกอิน**
+	Username 	string 	`gorm:"uniqueIndex"`
+	Password 	string
+	
 	// FK -> Appointment (A_ID)
 	AppointmentID *uint        `gorm:"column:a_id" valid:"-"`
 	Appointment   *Appointment `gorm:"references:ID" valid:"-"`
