@@ -6,7 +6,7 @@ type PregnantWoman struct {
 	gorm.Model
 	FullName    string
 	Age         int
-	HN          int
+	HN          string
 	CitizenID   string
 	PhoneNumber string
 	Email       string

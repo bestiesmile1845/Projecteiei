@@ -30,7 +30,6 @@ type UserInterface struct {
 	ID 		 uint 
 	Username string
 	Password string 
-	// ไม่ใช้ UserRole แล้ว
 }
 
 // POST /login
@@ -52,7 +51,6 @@ func Login(c *gin.Context) {
 
 	// 1. ลองค้นหาในตาราง Doctor
 	var doc entity.Doctor
-	// **ลบ Preload("UserRole")**
 	if err := db.
 		Where("username = ? OR email = ?", payload.Username, payload.Username).
 		First(&doc).Error; err == nil {
@@ -66,7 +64,6 @@ func Login(c *gin.Context) {
 	// 2. ถ้าไม่พบใน Doctor ลองค้นหาในตาราง PregnantWoman
 	if !found {
 		var woman entity.PregnantWoman
-		// **ลบ Preload("UserRole")**
 		if err := db.
 			Where("username = ? OR email = ?", payload.Username, payload.Username).
 			First(&woman).Error; err == nil {
@@ -89,8 +86,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
 		return
 	}
-	
-	// Role ถูกกำหนดไปแล้ว (บรรทัด 67, 79)
 	
 	// สร้าง JWT token
 	jwtWrapper := service.JwtWrapper{
@@ -130,5 +125,6 @@ func Login(c *gin.Context) {
 		Name: 	userName,
 	}
 
+	// ส่ง response กลับในรูปแบบ {"data": response}
 	c.JSON(http.StatusOK, gin.H{"data": response})
 }
