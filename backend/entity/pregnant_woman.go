@@ -4,17 +4,17 @@ import "gorm.io/gorm"
 
 type PregnantWoman struct {
 	gorm.Model
-	FullName    string
-	Age         int
-	HN          string
-	CitizenID   string
-	PhoneNumber string
-	Email       string
-	
+	FullName    string `json:"full_name"`
+	Age         int    `json:"age"`
+	HN          string `json:"hn"`
+	CitizenID   string `json:"citizen_id"`
+	PhoneNumber string `json:"phone_number"`
+	Email       string `json:"email"`
+
 	// **ฟิลด์ที่เพิ่มเข้ามาสำหรับการล็อกอิน**
-	Username 	string 	`gorm:"uniqueIndex"`
-	Password 	string
-	
+	Username string `gorm:"uniqueIndex" json:"username"`
+	Password string `json:"password"`
+
 	// FK -> Appointment (A_ID)
 	AppointmentID *uint        `gorm:"column:a_id" valid:"-"`
 	Appointment   *Appointment `gorm:"references:ID" valid:"-"`

@@ -1,40 +1,24 @@
 package main
 
 import (
-
-	 "github.com/bestiesmile1845/Projecteiei/controller"
-	// booking "github.com/Piyawat777/Final2/controller/Booking"
-	// carousel "github.com/Piyawat777/Final2/controller/Carousel"
-	// check "github.com/Piyawat777/Final2/controller/CheckInOut"
-	// checkroom "github.com/Piyawat777/Final2/controller/Checkroom"
-	// chk_payment "github.com/Piyawat777/Final2/controller/Chk_Payment"
-	// customer "github.com/Piyawat777/Final2/controller/Customer"
-	// hotel "github.com/Piyawat777/Final2/controller/Hotel"
-	// employee "github.com/Piyawat777/Final2/controller/Manage_Employee"
-	// payment "github.com/Piyawat777/Final2/controller/Payment"
-	// repreq "github.com/Piyawat777/Final2/controller/RepReq"
-	// reviewht "github.com/Piyawat777/Final2/controller/Review"
-	// room "github.com/Piyawat777/Final2/controller/Room"
-	// storage "github.com/Piyawat777/Final2/controller/Storage"
-	// "github.com/bestiesmile1845/Projecteiei/middlewares"
-
-	"github.com/bestiesmile1845/Projecteiei/entity"
+	"github.com/bestiesmile1845/Projecteiei/config"
+	"github.com/bestiesmile1845/Projecteiei/controller"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 
-	entity.SetupDatabase()
+	// Initialize database connection
+	config.ConnectionDB()
+	config.SetupDatabase()
 
 	r := gin.Default()
 
 	r.Use(CORSMiddleware())
 
-	
 	r.POST("/login", controller.Login)
 	r.POST("/register", controller.CreatePregnantWoman)
-
 
 	r.Run()
 
