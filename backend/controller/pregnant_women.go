@@ -4,8 +4,7 @@ import (
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"github.com/bestiesmile1845/Projecteiei/entity"
-	"egithub.com/bestiesmile1845/Projecteiei/config"
-
+	"github.com/bestiesmile1845/Projecteiei/config"
 )
 
 // POST /users
@@ -20,7 +19,7 @@ func CreatePregnantWoman(c *gin.Context) {
 
 	db := config.DB()
 
-	// ตรวจสอบว่า username ซ้ำกันหรือไม่
+	// ตรวจสอบว่า username ซ้ำกันหรือไม่ใน table PregnantWoman
 	var existingPregnantWoman entity.PregnantWoman
 	if err := db.Where("username = ?", PregnantWoman.Username).First(&existingPregnantWoman).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "username already exists in PregnantWoman"})
@@ -36,7 +35,7 @@ func CreatePregnantWoman(c *gin.Context) {
 	// เข้ารหัสลับรหัสผ่านที่ผู้ใช้กรอกก่อนบันทึกลงฐานข้อมูล
 	hashedPassword, _ := config.HashPassword(PregnantWoman.Password)
 
-	// สร้าง PregnantWoman
+	// สร้าง PregnantWoman พร้อมระบุฟิลด์ทั้งหมดที่จำเป็น
 	m := entity.PregnantWoman{
 		FullName: PregnantWoman.FullName,
 		Email:     PregnantWoman.Email,
@@ -44,6 +43,8 @@ func CreatePregnantWoman(c *gin.Context) {
 		Username: PregnantWoman.Username,
 		PhoneNumber: PregnantWoman.PhoneNumber,
 		Age: PregnantWoman.Age,
+		HN: PregnantWoman.HN, // **แก้ไข: เพิ่ม HN**
+		CitizenID: PregnantWoman.CitizenID, // **แก้ไข: เพิ่ม CitizenID**
 	}
 
 	// บันทึก
@@ -126,7 +127,7 @@ func DeletePregnantWoman(c *gin.Context) {
 
 	id := c.Param("id")
 	db := config.DB()
-	if tx := db.Exec("DELETE FROM PregnantWomans WHERE id = ?", id); tx.RowsAffected == 0 {
+	if tx := db.Exec("DELETE FROM pregnant_women WHERE id = ?", id); tx.RowsAffected == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "id not found"})
 		return
 	}
@@ -152,14 +153,16 @@ func UpdatePregnantWoman(c *gin.Context) {
 		return
 	}
 
+	// ก่อน Save ควรตรวจสอบ Username ซ้ำอีกครั้ง
+	var existingPregnantWoman entity.PregnantWoman
+	if err := db.Where("username = ? AND id != ?", PregnantWoman.Username, PregnantWomanID).First(&existingPregnantWoman).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "username already exists"})
+		return
+	}
+	
 	result = db.Save(&PregnantWoman)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
-		return
-	}
-	var existingPregnantWoman entity.PregnantWoman
-	if err := db.Where("username = ?", PregnantWoman.Username).First(&existingPregnantWoman).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "username already exists"})
 		return
 	}
 	

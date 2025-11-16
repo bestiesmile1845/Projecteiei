@@ -33,6 +33,7 @@ func main() {
 
 	
 	r.POST("/login", controller.Login)
+	r.POST("/register", controller.CreatePregnantWoman)
 
 
 	r.Run()

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   AppBar,
   Toolbar,
@@ -23,14 +24,24 @@ import {
   LockOpen,
   Visibility,
   VisibilityOff,
+  Person,
+  Phone,
+  Cake,
+  Badge,
+  VpnKey,
 } from '@mui/icons-material';
 
 // ธีมสีหลัก: สีเทาอ่อน (#E0E0E0)
 const PRIMARY_COLOR = '#E0E0E0';
-const API_URL = 'http://localhost:3000/register'; // สมมติ API
+const API_URL = 'http://localhost:8080'; // Endpoint สำหรับ CreatePregnantWoman
 
 // Interface สำหรับข้อมูลฟอร์ม
 interface RegisterForm {
+  fullName: string;
+  phoneNumber: string;
+  age: string;
+  hn: string;
+  citizenID: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -38,12 +49,44 @@ interface RegisterForm {
 
 // Interface สำหรับ Error State
 interface FormErrors {
+  fullName: string;
+  phoneNumber: string;
+  age: string;
+  hn: string;
+  citizenID: string;
   email: string;
   password: string;
   confirmPassword: string;
 }
 
 // --- Validation Functions ---
+
+const validateFullName = (name: string): string => {
+  return name ? '' : 'กรุณากรอกชื่อ-นามสกุล';
+};
+
+const validatePhoneNumber = (phone: string): string => {
+  if (!phone) return 'กรุณากรอกเบอร์โทรศัพท์';
+  if (!/^\d{10}$/.test(phone)) return 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (10 หลัก)';
+  return '';
+};
+
+const validateAge = (age: string): string => {
+  if (!age) return 'กรุณากรอกอายุ';
+  const ageNum = parseInt(age);
+  if (isNaN(ageNum) || ageNum < 15 || ageNum > 50) return 'อายุต้องอยู่ระหว่าง 15-50 ปี';
+  return '';
+};
+
+const validateCitizenID = (id: string): string => {
+  if (!id) return 'กรุณากรอกเลขบัตรประชาชน';
+  if (!/^\d{13}$/.test(id)) return 'เลขบัตรประชาชนต้องมี 13 หลัก';
+  return '';
+};
+
+const validateHN = (hn: string): string => {
+  return hn ? '' : 'กรุณากรอก HN';
+};
 
 const validateEmail = (email: string): string => {
   if (!email) return 'กรุณากรอกอีเมล';
@@ -72,11 +115,21 @@ const RegisterView: React.FC = () => {
 
   // State Management
   const [formData, setFormData] = useState<RegisterForm>({
+    fullName: '',
+    phoneNumber: '',
+    age: '',
+    hn: '',
+    citizenID: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
   const [errors, setErrors] = useState<FormErrors>({
+    fullName: '',
+    phoneNumber: '',
+    age: '',
+    hn: '',
+    citizenID: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -100,6 +153,11 @@ const RegisterView: React.FC = () => {
   };
 
   const validateForm = useCallback((): boolean => {
+    const fullNameError = validateFullName(formData.fullName);
+    const phoneNumberError = validatePhoneNumber(formData.phoneNumber);
+    const ageError = validateAge(formData.age);
+    const hnError = validateHN(formData.hn);
+    const citizenIDError = validateCitizenID(formData.citizenID);
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
     const confirmPasswordError = validateConfirmPassword(
@@ -108,6 +166,11 @@ const RegisterView: React.FC = () => {
     );
 
     const newErrors = {
+      fullName: fullNameError,
+      phoneNumber: phoneNumberError,
+      age: ageError,
+      hn: hnError,
+      citizenID: citizenIDError,
       email: emailError,
       password: passwordError,
       confirmPassword: confirmPasswordError,
@@ -115,7 +178,16 @@ const RegisterView: React.FC = () => {
 
     setErrors(newErrors);
 
-    return !emailError && !passwordError && !confirmPasswordError;
+    return (
+      !fullNameError &&
+      !phoneNumberError &&
+      !ageError &&
+      !hnError &&
+      !citizenIDError &&
+      !emailError &&
+      !passwordError &&
+      !confirmPasswordError
+    );
   }, [formData]);
 
   const register = useCallback(async () => {
@@ -125,27 +197,36 @@ const RegisterView: React.FC = () => {
     setRegisterError(null);
     setSuccessMessage(null);
 
-    // --- จำลองการเรียก API Register (TODO: แทนที่ด้วย axios/fetch จริง) ---
     try {
-      // **TODO: นำเข้าและใช้ axios.post(API_URL, { email: formData.email, password: formData.password, ... }) ที่นี่**
-      
-      console.log('Attempting to register with:', formData);
+      const response = await axios.post(API_URL, {
+        FullName: formData.fullName,
+        Email: formData.email,
+        Password: formData.password,
+        Username: formData.email, // สมมติให้ใช้ Email เป็น Username
+        PhoneNumber: formData.phoneNumber,
+        Age: parseInt(formData.age), // แปลงเป็นตัวเลขตาม Go struct
+        HN: formData.hn,
+        CitizenID: formData.citizenID,
+      });
 
-      // จำลองการหน่วงเวลาการเรียก API 2 วินาที
-      await new Promise(resolve => setTimeout(resolve, 2000)); 
+      console.log('Registration Success:', response.data);
 
-      // สมมติว่า Register สำเร็จ
       setSuccessMessage('สมัครสมาชิกสำเร็จ! กำลังนำทางไปหน้าเข้าสู่ระบบ...');
       
-      // นำทางไปหน้า Login หลังจาก 2 วินาที
       setTimeout(() => {
         navigate('/login');
       }, 2000);
 
     } catch (error) {
-      console.error('Registration Error:', error);
-      // **TODO: จัดการ error response จาก API จริง**
-      setRegisterError('เกิดข้อผิดพลาดในการสมัครสมาชิก (โปรดตรวจสอบ Backend)');
+      const responseData = (error as any).response?.data;
+      let errorMessage = 'เกิดข้อผิดพลาดในการสมัครสมาชิก';
+
+      if (responseData && responseData.error) {
+        errorMessage = responseData.error; // ดึง error จาก Backend (เช่น username already exists)
+      } else if ((error as any).message && (error as any).message.includes('Network Error')) {
+        errorMessage = 'ไม่สามารถเชื่อมต่อกับ Server ได้ กรุณาตรวจสอบสถานะ Backend';
+      }
+      setRegisterError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -160,8 +241,8 @@ const RegisterView: React.FC = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <CssBaseline />
       
-      {/* App Bar (เทียบเท่า v-app-bar) */}
-      <AppBar position="fixed" flat sx={{ bgcolor: 'white', borderBottom: 1, borderColor: 'grey.300', boxShadow: 'none' }}>
+      {/* App Bar */}
+      <AppBar position="fixed" sx={{ bgcolor: 'white', borderBottom: 1, borderColor: 'grey.300', boxShadow: 'none' }}>        
         <Toolbar>
           <Typography variant="h6" component="div" fontWeight="medium">
             Maternal and Child Health Handbook
@@ -169,7 +250,7 @@ const RegisterView: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Main Content (เทียบเท่า v-main) */}
+      {/* Main Content */}
       <Box 
         component="main" 
         sx={{ 
@@ -183,7 +264,7 @@ const RegisterView: React.FC = () => {
         }}
       >
         <Container component="div" maxWidth="sm">
-          {/* Register Card (เทียบเท่า v-card) */}
+          {/* Register Card */}
           <Card sx={{ p: 3, m: 1, elevation: 6, borderRadius: '8px', maxWidth: '500px' }}>
             <CardContent>
               <Typography 
@@ -193,17 +274,107 @@ const RegisterView: React.FC = () => {
                 textAlign="center" 
                 mb={3}
               >
-                สมัครสมาชิก
+                สมัครสมาชิก (สตรีมีครรภ์)
               </Typography>
 
-              {/* Form (เทียบเท่า v-form) */}
               <Box component="form" onSubmit={handleSubmit} noValidate>
                 
+                {/* Full Name Field */}
+                <TextField
+                  fullWidth
+                  name="fullName"
+                  label="ชื่อ-นามสกุล"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  error={!!errors.fullName}
+                  helperText={errors.fullName}
+                  variant="outlined"
+                  size="small"
+                  required
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (<InputAdornment position="start"><Person /></InputAdornment>),
+                  }}
+                />
+
+                {/* Phone Number Field */}
+                <TextField
+                  fullWidth
+                  name="phoneNumber"
+                  label="เบอร์โทรศัพท์"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  error={!!errors.phoneNumber}
+                  helperText={errors.phoneNumber}
+                  variant="outlined"
+                  size="small"
+                  required
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (<InputAdornment position="start"><Phone /></InputAdornment>),
+                  }}
+                />
+
+                {/* Age Field */}
+                <TextField
+                  fullWidth
+                  name="age"
+                  label="อายุ"
+                  type="number"
+                  value={formData.age}
+                  onChange={handleChange}
+                  error={!!errors.age}
+                  helperText={errors.age}
+                  variant="outlined"
+                  size="small"
+                  required
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (<InputAdornment position="start"><Cake /></InputAdornment>),
+                  }}
+                />
+
+                {/* HN Field */}
+                <TextField
+                  fullWidth
+                  name="hn"
+                  label="HN (Hospital Number)"
+                  value={formData.hn}
+                  onChange={handleChange}
+                  error={!!errors.hn}
+                  helperText={errors.hn}
+                  variant="outlined"
+                  size="small"
+                  required
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (<InputAdornment position="start"><VpnKey /></InputAdornment>),
+                  }}
+                />
+
+                {/* Citizen ID Field */}
+                <TextField
+                  fullWidth
+                  name="citizenID"
+                  label="เลขบัตรประชาชน"
+                  value={formData.citizenID}
+                  onChange={handleChange}
+                  error={!!errors.citizenID}
+                  helperText={errors.citizenID}
+                  variant="outlined"
+                  size="small"
+                  required
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (<InputAdornment position="start"><Badge /></InputAdornment>),
+                  }}
+                />
+
                 {/* Email Field */}
                 <TextField
                   fullWidth
                   name="email"
-                  label="อีเมล"
+                  label="อีเมล (ใช้เป็นชื่อผู้ใช้)"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
@@ -214,11 +385,7 @@ const RegisterView: React.FC = () => {
                   required
                   sx={{ mb: 2 }}
                   InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Email />
-                      </InputAdornment>
-                    ),
+                    startAdornment: (<InputAdornment position="start"><Email /></InputAdornment>),
                   }}
                 />
 
@@ -237,11 +404,7 @@ const RegisterView: React.FC = () => {
                   sx={{ mb: 2 }}
                   type={showPassword ? 'text' : 'password'}
                   InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock />
-                      </InputAdornment>
-                    ),
+                    startAdornment: (<InputAdornment position="start"><Lock /></InputAdornment>),
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
@@ -271,22 +434,7 @@ const RegisterView: React.FC = () => {
                   sx={{ mb: 4 }}
                   type={showPassword ? 'text' : 'password'}
                   InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockOpen />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                          size="small"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+                    startAdornment: (<InputAdornment position="start"><LockOpen /></InputAdornment>),
                   }}
                 />
 

@@ -27,7 +27,7 @@ import axios from 'axios';
 
 // ธีมสีหลัก: สีเทาอ่อน (#E0E0E0)
 const PRIMARY_COLOR = '#E0E0E0';
-const API_URL = 'http://localhost:3000/login'; 
+const API_URL = 'http://localhost:8080/login'; 
 
 // อินเทอร์เฟซสำหรับข้อมูลฟอร์ม
 interface LoginForm {
