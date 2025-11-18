@@ -21,7 +21,7 @@ func main() {
 	r.POST("/register", controller.CreatePregnantWoman)
 	r.GET("/me", controller.GetMe)
 
-	r.Run()
+	r.Run(":8081")
 
 }
 
