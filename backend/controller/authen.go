@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/bestiesmile1845/Projecteiei/config"
-	"github.com/bestiesmile1845/Projecteiei/entity" // ตรวจสอบเส้นทางให้ถูกต้อง
+	"github.com/bestiesmile1845/Projecteiei/entity"  // ตรวจสอบเส้นทางให้ถูกต้อง
 	"github.com/bestiesmile1845/Projecteiei/service" // ตรวจสอบเส้นทางให้ถูกต้อง
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -20,26 +20,26 @@ type LoginPayload struct {
 
 // LoginResponse สำหรับตอบกลับ frontend
 type LoginResponse struct {
-	Token string 	 `json:"token"`
-	ID 	  uint 	 `json:"id"`
+	Token string      `json:"token"`
+	ID    uint        `json:"id"`
 	User  interface{} `json:"user"` // สามารถเป็น entity.PregnantWoman หรือ entity.Doctor
-	Role  string 	 `json:"role"` // Role ที่กำหนดโดยตรง
-	Name  string 	 `json:"name"`
+	Role  string      `json:"role"` // Role ที่กำหนดโดยตรง
+	Name  string      `json:"name"`
 }
 
 // --- Helper struct to hold common login data ---
 type UserInterface struct {
-	ID 		 uint 
+	ID       uint
 	Username string
-	Password string 
+	Password string
 }
 
 // POST /login
 func Login(c *gin.Context) {
 	var payload LoginPayload
-	var user UserInterface 
+	var user UserInterface
 	var found bool = false
-	var role string 	  // **กำหนด Role โดยตรง**
+	var role string // **กำหนด Role โดยตรง**
 	var userID uint
 	var userName string
 	var userDetails interface{}
@@ -48,7 +48,7 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	db := config.DB() // ใช้ config.DB() แทน
 
 	// 1. ลองค้นหาในตาราง Doctor
@@ -56,7 +56,7 @@ func Login(c *gin.Context) {
 	if err := db.
 		Where("username = ? OR email = ?", payload.Username, payload.Username).
 		First(&doc).Error; err == nil {
-		
+
 		user = UserInterface{ID: doc.ID, Username: doc.Username, Password: doc.Password}
 		userDetails = doc
 		role = "doctor" // **กำหนด Role เป็น doctor**
@@ -69,7 +69,7 @@ func Login(c *gin.Context) {
 		if err := db.
 			Where("username = ? OR email = ?", payload.Username, payload.Username).
 			First(&woman).Error; err == nil {
-			
+
 			user = UserInterface{ID: woman.ID, Username: woman.Username, Password: woman.Password}
 			userDetails = woman
 			role = "pregnant" // **กำหนด Role เป็น pregnant**
@@ -88,11 +88,11 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
 		return
 	}
-	
+
 	// สร้าง JWT token
 	jwtWrapper := service.JwtWrapper{
-		SecretKey: 		 "SvNQpBN8y3qlVrsGAYYWoJJk56LtzFHx",
-		Issuer: 		 "AuthService",
+		SecretKey:       "SvNQpBN8y3qlVrsGAYYWoJJk56LtzFHx",
+		Issuer:          "AuthService",
 		ExpirationHours: 24,
 	}
 	signedToken, err := jwtWrapper.GenerateToken(user.Username)
@@ -118,13 +118,12 @@ func Login(c *gin.Context) {
 	// DEBUG: แสดง role ที่ดึงมา
 	fmt.Println("Role determined:", role)
 
-
 	response := LoginResponse{
 		Token: signedToken,
-		ID: 	userID,
-		User: 	userDetails,
-		Role: 	role, // ใช้ role ที่กำหนดโดยตรง
-		Name: 	userName,
+		ID:    userID,
+		User:  userDetails,
+		Role:  role, // ใช้ role ที่กำหนดโดยตรง
+		Name:  userName,
 	}
 
 	// ส่ง response กลับในรูปแบบ {"data": response}
